@@ -1,0 +1,84 @@
+﻿@page "/"
+@inject ILogger<Index> Logger
+
+<PageTitle>Index</PageTitle>
+
+<h1>BitMasks</h1>
+
+<ul>
+    @foreach (var item in model.Cities)
+    {
+        <li>
+        @item 
+        </li>
+    }
+
+</ul>
+
+<EditForm Model="@model" OnValidSubmit="@HandleValidSubmit">
+    <legend>Offset</legend>
+    <label id="Offset">Select GMT Offset</label>
+    <InputNumber id="InputOffset" @bind-Value=@model.Offset>Find Cities</InputNumber>
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    <div>
+        <button type="submit">Find Cities</button>
+    </div>
+</EditForm>
+
+@if (calculated)
+{
+    <p>Found @foundcities.Count() Cities:</p>
+    <ul>
+        @foreach (var item in foundcities)
+        {
+            <li>
+                @item
+            </li>
+        }
+    </ul>
+    
+}
+
+@code {
+    private CityModel model = new();
+    public bool calculated = false;
+
+    public List<string> foundcities = new List<string>();
+    private void HandleValidSubmit()
+    {
+        foundcities.Clear();
+        var searchoffset = IntoBit(model.Offset);
+        foreach(var kvp in model.CityDict){
+            var city = kvp.Key;
+            var offset = kvp.Value;
+            var bitoffset = IntoBit(offset);
+
+            if (Comparebit(bitoffset,searchoffset)){
+                foundcities.Add(city);
+            }
+        }
+        calculated = true;
+
+    }
+
+    public string IntoBit(int offset){
+        string bitstr = "000000000000000000000000";
+        bitstr = bitstr.Remove(offset+12,1).Insert(offset+12,"1"); 
+        return bitstr;
+    }
+
+    public bool Comparebit(string lhs,string rhs){
+        
+        int length = lhs.Length;
+        string resultstr = "";
+        for (int i = 0; i < length; i++)
+        {
+            var lhsint = Convert.ToInt32(Char.GetNumericValue(lhs[i]));
+            var rhsint = Convert.ToInt32(Char.GetNumericValue(rhs[i]));
+            resultstr = resultstr + Convert.ToString(lhsint ^ rhsint);
+        }
+        return (resultstr == "000000000000000000000000");
+    }
+
+}
